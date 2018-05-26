@@ -14,6 +14,8 @@ phases:
       - mkdir -p /go/src/github.com/csvikram
       - ln -s ${CODEBUILD_SRC_DIR} "/go/src/${PACKAGE}"
 
+      - npm install newman --global
+
       # Print all environment variables (handy for AWS CodeBuild logs)
       - env
 
@@ -33,11 +35,19 @@ phases:
   build:
     commands:
 
+#      - newman run https://api.getpostman.com/collections/9482a236235874adeb08 --environment localhost8080.json
+
       # Build our go application
       - GOOS=linux go build -o main main.go
+      - go run main.go &
+
+      - newman run -r html,cli https://api.getpostman.com/collections/9482a236235874adeb08 --environment localhost8080.json --reporter-html-export report.html
+      - pkill -f "go run main.go"
+
 
 artifacts:
   type: zip
   base-directory: /go/src/$PACKAGE
   files:
     - main
+    - report.html
